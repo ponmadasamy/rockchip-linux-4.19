@@ -162,12 +162,12 @@
 };
 
 &i2c1 {
-	status = "disabled";
+	status = "okay";
 
 };
 
 &i2c2 {
-	status = "disabled";
+	status = "okay";
 };
 
 &i2c3 {
@@ -189,24 +189,24 @@
 						 "button1", "button2", "button3", "button4", "button5";
 	};
 
-	eDP_LVDS_bridge: ptn3460@60 {
-		status = "disabled";
-		compatible = "nxp,ptn3460";
-		reg = <0x60>;
-		edid-emulation = <7>;	/* 0 to 6 from ROM 7 - BDC 800x480 */
-		ports {
-			lvds_source: port@0 {
-				bridge_out: endpoint {
-					remote-endpoint = <&panel_in>;
-				};
-			};
-			edp_sink: port@1 {
-				bridge_in: endpoint {
-					remote-endpoint = <&edp_out>;
-				};
-			};
-		};
-	};
+	// eDP_LVDS_bridge: ptn3460@60 {
+	// 	status = "disabled";
+	// 	compatible = "nxp,ptn3460";
+	// 	reg = <0x60>;
+	// 	edid-emulation = <7>;	/* 0 to 6 from ROM 7 - BDC 800x480 */
+	// 	ports {
+	// 		lvds_source: port@0 {
+	// 			bridge_out: endpoint {
+	// 				remote-endpoint = <&panel_in>;
+	// 			};
+	// 		};
+	// 		edp_sink: port@1 {
+	// 			bridge_in: endpoint {
+	// 				remote-endpoint = <&edp_out>;
+	// 			};
+	// 		};
+	// 	};
+	// };
 
 	sgtl5000: codec@0a {
 		status = "okay";
@@ -350,11 +350,11 @@
 	mali-supply = <&vdd_gpu>;
 };
 
-&vpu {
-	status = "okay";
-	/* 0 means ion, 1 means drm */
-	//allocator = <0>;
-};
+// &vpu {
+// 	status = "okay";
+// 	/* 0 means ion, 1 means drm */
+// 	//allocator = <0>;
+// };
 
 &rkvdec {
 	status = "okay";

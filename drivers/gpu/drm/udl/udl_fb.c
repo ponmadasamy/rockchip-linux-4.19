@@ -92,8 +92,8 @@ int udl_handle_damage(struct udl_framebuffer *fb, int x, int y,
 	int aligned_x;
 	int log_bpp;
 
-	BUG_ON(!is_power_of_2(fb->base.format->cpp[0]));
-	log_bpp = __ffs(fb->base.format->cpp[0]);
+	BUG_ON(!is_power_of_2(fb->base.format->bpp[0]));
+	log_bpp = __ffs(fb->base.format->bpp[0]);
 
 	if (!fb->active_16)
 		return 0;

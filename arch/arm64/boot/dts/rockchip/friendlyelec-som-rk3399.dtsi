@@ -3,7 +3,8 @@
 #include <dt-bindings/input/input.h>
 #include "rk3399.dtsi"
 #include "rk3399-opp.dtsi"
-#include "rk3399-linux.dtsi"
+#include "rk3399-vop-clk-set.dtsi"
+#include "rk3399-android.dtsi"
 
 / {
 	compatible = "rockchip,rk3399", "friendlyelec,som-rk3399";
@@ -12,11 +13,10 @@
 		spi1 = &spi1;
 	};
 
-	xin32k: xin32k {
-		compatible = "fixed-clock";
-		clock-frequency = <32768>;
-		clock-output-names = "xin32k";
-		#clock-cells = <0>;
+	/* first 64k(0xff8c0000~0xff8d0000) for ddr and suspend */
+	iram: sram@ff8d0000 {
+		compatible = "mmio-sram";
+		reg = <0x0 0xff8d0000 0x0 0x20000>; /* 128k */
 	};
 
 	clkin_gmac: external-gmac-clock {
@@ -86,7 +86,7 @@
 		compatible = "pwm-regulator";
 		pwms = <&pwm2 0 25000 1>;
 		regulator-name = "vdd_log";
-		regulator-min-microvolt = <800000>;
+		regulator-min-microvolt = <810000>;
 		regulator-max-microvolt = <1400000>;
 		regulator-always-on;
 		regulator-boot-on;
@@ -286,37 +286,14 @@
 	cpu-supply = <&vdd_cpu_b>;
 };
 
+&gpu {
+	status = "okay";
+	mali-supply = <&vdd_gpu>;
+};
+
 &dfi {
 	status = "okay";
 };
-
-// &dmc {
-// 	status = "okay";
-// 	center-supply = <&vdd_center>;
-// 	upthreshold = <40>;
-// 	downdifferential = <20>;
-// 	system-status-freq = <
-// 		/*system status         freq(KHz)*/
-// 		SYS_STATUS_NORMAL       800000
-// 		SYS_STATUS_REBOOT       400000
-// 		SYS_STATUS_SUSPEND      400000
-// 		SYS_STATUS_VIDEO_1080P  400000
-// 		SYS_STATUS_VIDEO_4K     800000
-// 		SYS_STATUS_VIDEO_4K_10B 800000
-// 		SYS_STATUS_PERFORMANCE  800000
-// 		SYS_STATUS_BOOST        400000
-// 		SYS_STATUS_DUALVIEW     800000
-// 		SYS_STATUS_ISP          800000
-// 	>;
-// 	vop-bw-dmc-freq = <
-// 	/* min_bw(MB/s) max_bw(MB/s) freq(KHz) */
-// 		0       762      200000
-// 		763     1893     400000
-// 		1894    3012     600000
-// 		3013    99999    800000
-// 	>;
-// 	auto-min-freq = <400000>;
-// };
 
 &dmc {
 	status = "okay";
@@ -385,6 +362,7 @@
 };
 
 &gmac {
+	status = "okay";
 	phy-supply = <&vcc_phy>;
 	phy-mode = "rgmii";
 	clock_in_out = "input";
@@ -395,9 +373,12 @@
 	assigned-clock-parents = <&clkin_gmac>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii_pins>;
+	snps,aal;
+	snps,rxpbl = <0x4>;
+	snps,txpbl = <0x4>;
 	tx_delay = <0x28>;
 	rx_delay = <0x11>;
-	status = "okay";
+	handle_cpu_id = <1>;
 };
 
 &uart0 {
@@ -726,6 +707,14 @@
 		interrupt-parent = <&gpio1>;
 		interrupts = <20 IRQ_TYPE_EDGE_FALLING>;
 	};
+
+	onewire_ts@2f {
+		status = "disabled";
+		compatible = "onewire";
+		reg = <0x2f>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <20 IRQ_TYPE_EDGE_FALLING>;
+	};
 };
 
 &i2c7 {
@@ -734,7 +723,6 @@
 
 &i2s0 {
 	status = "okay";
-	rockchip,i2s-broken-burst-len;
 	rockchip,playback-channels = <8>;
 	rockchip,capture-channels = <8>;
 	#sound-dai-cells = <0>;
@@ -828,6 +816,39 @@
 	pinctrl-0 = <&pwm2_pin_pull_down>;
 };
 
+&pwm3 {
+	status = "disabled";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm3a_pin>;
+
+	interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH 0>;
+	compatible = "rockchip,remotectl-pwm";
+	remote_pwm_id = <3>;
+	handle_cpu_id = <1>;
+	remote_support_psci = <1>;
+
+	ir_key1 {
+		rockchip,usercode = <0xc43b>;
+		/* /system/usr/keylayout/ff420030_pwm.kl */
+		rockchip,key_table =
+			<0xff	116>,
+			<0xef	105>,
+			<0xed	106>,
+			<0xf2	103>,
+			<0xea	108>,
+			<0xee	232>,
+			<0xe9	113>,
+			<0xf1	114>,
+			<0xf3	115>,
+			<0xae	139>,
+			<0xeb	102>,
+			<0xaf	158>,
+			<0xf7	216>,
+			<0xe5	 99>,
+			<0xf5	388>;
+	};
+};
+
 &rockchip_suspend {
 	status = "okay";
 	rockchip,sleep-debug-en = <1>;
@@ -878,8 +899,8 @@
 
 &sdio0 {
 	status = "okay";
-	clock-frequency = <50000000>;
-	clock-freq-min-max = <200000 50000000>;
+	clock-frequency = <150000000>;
+	clock-freq-min-max = <100000 150000000>;
 	supports-sdio;
 	bus-width = <4>;
 	disable-wp;
@@ -895,6 +916,7 @@
 };
 
 &sdmmc {
+	status = "okay";
 	clock-frequency = <150000000>;
 	clock-freq-min-max = <100000 150000000>;
 	supports-sd;
@@ -903,12 +925,11 @@
 	cap-sd-highspeed;
 	disable-wp;
 	num-slots = <1>;
-	//sd-uhs-sdr104;
+	sd-uhs-sdr104;
 	vmmc-supply = <&vcc_sd>;
 	vqmmc-supply = <&vccio_sd>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&sdmmc_clk &sdmmc_cmd &sdmmc_cd &sdmmc_bus4>;
-	status = "okay";
 };
 
 &tsadc {
@@ -991,6 +1012,11 @@
 };
 
 &pinctrl {
+
+	pcfg_input: pcfg-input {
+		input-enable;
+	};
+
 	/delete-node/ isp;
 	/delete-node/ cam_pins;
 	
